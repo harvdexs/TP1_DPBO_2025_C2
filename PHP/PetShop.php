@@ -1,4 +1,6 @@
 <?php
+session_start();
+
 class PetShop {
     private $toolID;
     private $namaProduk;
@@ -6,38 +8,21 @@ class PetShop {
     private $hargaProduk;
     private $fotoProduk;
 
-    public function __construct() {
-        $this->toolID = 0;
-        $this->namaProduk = "";
-        $this->kategoriProduk = "";
-        $this->hargaProduk = 0;
-        $this->fotoProduk = "";
-    }
-
-    public function isiDataProduk($toolID, $namaProduk, $kategoriProduk, $hargaProduk, $fotoProduk) {
-        $this->toolID = $toolID;
-        $this->namaProduk = $namaProduk;
-        $this->kategoriProduk = $kategoriProduk;
-        $this->hargaProduk = $hargaProduk;
-        $this->fotoProduk = $fotoProduk;
+    public function __construct($id, $nama, $kategori, $harga, $foto) {
+        $this->toolID = $id;
+        $this->namaProduk = $nama;
+        $this->kategoriProduk = $kategori;
+        $this->hargaProduk = $harga;
+        $this->fotoProduk = $foto;
     }
 
     public function getToolID() { return $this->toolID; }
-    public function setToolID($toolID) { $this->toolID = $toolID; }
-
     public function getNamaProduk() { return $this->namaProduk; }
-    public function setNamaProduk($namaProduk) { $this->namaProduk = $namaProduk; }
-
     public function getKategoriProduk() { return $this->kategoriProduk; }
-    public function setKategoriProduk($kategoriProduk) { $this->kategoriProduk = $kategoriProduk; }
-
     public function getHargaProduk() { return $this->hargaProduk; }
-    public function setHargaProduk($hargaProduk) { $this->hargaProduk = $hargaProduk; }
-
     public function getFotoProduk() { return $this->fotoProduk; }
-    public function setFotoProduk($fotoProduk) { $this->fotoProduk = $fotoProduk; }
 
-    public function tampilkanProduk($daftarProduk) {
+    public static function tampilkanProduk($daftarProduk) {
         echo "
         <form method='GET' action='index.php'>
             <input type='text' name='search' placeholder='Cari produk...' />
@@ -55,10 +40,12 @@ class PetShop {
             echo "<td>" . $produk->getNamaProduk() . "</td>";
             echo "<td>" . $produk->getKategoriProduk() . "</td>";
             echo "<td>" . $produk->getHargaProduk() . "</td>";
-            echo "<td><img src='" . $produk->getFotoProduk() . "' alt='Foto Produk' width='100'></td>";
+            echo "<td><img src='" . $produk->getFotoProduk() . "' width='100'></td>";
             echo "<td>
                     <a href='edit.php?id=" . $produk->getToolID() . "'><button>Edit</button></a>
-                    <a href='index.php?action=delete&id=" . $produk->getToolID() . "' onclick='return confirm(\"Yakin ingin menghapus?\")'><button>Hapus</button></a>
+                    <a href='index.php?hapus=" . $produk->getToolID() . "' onclick='return confirm(\"Yakin ingin menghapus?\")'>
+                        <button style='background-color:red; color:white;'>Hapus</button>
+                    </a>
                   </td>";
             echo "</tr>";
         }

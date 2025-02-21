@@ -1,54 +1,63 @@
 <?php
 include 'PetShop.php';
 
-// Baca data JSON
-$jsonData = file_get_contents('produk.json');
-$produkArray = json_decode($jsonData, true);
-
-// Cari produk berdasarkan ID
-$toolID = $_GET['id'];
-$produkIndex = array_search($toolID, array_column($produkArray, 'toolID'));
-
-if ($produkIndex === false) {
-    die("Produk tidak ditemukan!");
+if (!isset($_GET['id'])) {
+    header("Location: index.php");
+    exit();
 }
 
-$produk = $produkArray[$produkIndex];
+$oldId = $_GET['id'];
+$produkEdit = null;
+$indexEdit = -1;
 
-// Update data jika form dikirim
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $produkArray[$produkIndex]['namaProduk'] = $_POST['namaProduk'];
-    $produkArray[$produkIndex]['kategoriProduk'] = $_POST['kategoriProduk'];
-    $produkArray[$produkIndex]['hargaProduk'] = $_POST['hargaProduk'];
+foreach ($_SESSION['daftarProduk'] as $index => $produk) {
+    if ($produk->getToolID() == $oldId) {
+        $produkEdit = $produk;
+        $indexEdit = $index;
+        break;
+    }
+}
 
-    // Upload foto baru jika ada
-    if ($_FILES['fotoProduk']['name'] != "") {
-        $fotoProduk = $_FILES['fotoProduk']['name'];
+if (!$produkEdit) {
+    header("Location: index.php");
+    exit();
+}
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $newId = $_POST['id']; // ID bisa diedit
+    $nama = $_POST['nama'];
+    $kategori = $_POST['kategori'];
+    $harga = $_POST['harga'];
+    $foto = $produkEdit->getFotoProduk();
+
+    // Proses upload foto jika ada yang baru
+    if ($_FILES["foto"]["size"] > 0) {
+        if (file_exists($foto)) {
+            unlink($foto);
+        }
         $targetDir = "assets/";
-        $targetFile = $targetDir . basename($fotoProduk);
-        move_uploaded_file($_FILES['fotoProduk']['tmp_name'], $targetFile);
-        $produkArray[$produkIndex]['fotoProduk'] = $targetFile;
+        $foto = $targetDir . basename($_FILES["foto"]["name"]);
+        move_uploaded_file($_FILES["foto"]["tmp_name"], $foto);
     }
 
-    // Simpan perubahan ke JSON
-    file_put_contents('produk.json', json_encode($produkArray, JSON_PRETTY_PRINT));
+    // Hapus data lama, tambahkan yang baru
+    unset($_SESSION['daftarProduk'][$indexEdit]);
+    $_SESSION['daftarProduk'][] = new PetShop($newId, $nama, $kategori, $harga, $foto);
 
-    header('Location: index.php');
+    // Reset array index agar tetap rapi
+    $_SESSION['daftarProduk'] = array_values($_SESSION['daftarProduk']);
+
+    header("Location: index.php");
     exit();
 }
 ?>
 
-<form method="POST" action="edit.php?id=<?php echo $toolID; ?>" enctype="multipart/form-data">
-    <label>ID:</label>
-    <input type="text" name="toolID" value="<?php echo $produk['toolID']; ?>" required /><br />
-    <label>Nama Produk:</label>
-    <input type="text" name="namaProduk" value="<?php echo $produk['namaProduk']; ?>" required /><br />
-    <label>Kategori:</label>
-    <input type="text" name="kategoriProduk" value="<?php echo $produk['kategoriProduk']; ?>" required /><br />
-    <label>Harga:</label>
-    <input type="number" name="hargaProduk" value="<?php echo $produk['hargaProduk']; ?>" required /><br />
-    <label>Foto:</label>
-    <input type="file" name="fotoProduk" /><br />
-    <img src="<?php echo $produk['fotoProduk']; ?>" width="100"><br />
-    <button type="submit">Update Data</button>
+<form method="POST" enctype="multipart/form-data">
+    <label>ID Produk:</label><input type="number" name="id" value="<?= $produkEdit->getToolID(); ?>" required><br>
+    <label>Nama Produk:</label><input type="text" name="nama" value="<?= $produkEdit->getNamaProduk(); ?>" required><br>
+    <label>Kategori:</label><input type="text" name="kategori" value="<?= $produkEdit->getKategoriProduk(); ?>" required><br>
+    <label>Harga:</label><input type="number" name="harga" value="<?= $produkEdit->getHargaProduk(); ?>" required><br>
+    <label>Foto Baru:</label><input type="file" name="foto"><br>
+    <button type="submit">Simpan</button>
+    <a href="index.php"><button type="button">Batal</button></a>
 </form>
